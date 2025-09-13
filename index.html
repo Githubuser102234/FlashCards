@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashcard Master</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .flashcard-container {
+            min-height: 15rem;
+            transition: transform 0.5s ease-in-out;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+        .flashcard-content {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .flashcard-front {
+            background-color: #1f2937;
+            transform: rotateY(0deg);
+        }
+        .flashcard-back {
+            background-color: #2563eb;
+            transform: rotateY(180deg);
+        }
+        .flipped .flashcard-front {
+            transform: rotateY(180deg);
+        }
+        .flipped .flashcard-back {
+            transform: rotateY(360deg);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen p-4">
+
+    <!-- Main Container -->
+    <div id="app-container" class="w-full max-w-xl flex flex-col items-center">
+        <div class="text-center mb-6">
+            <h1 class="text-4xl font-extrabold text-blue-400">Flashcard Master</h1>
+            <p id="user-id" class="text-sm text-gray-400 mt-2"></p>
+        </div>
+
+        <!-- The main application content will be rendered here -->
+        <div id="content-container" class="w-full"></div>
+    </div>
+
+    <!-- Firebase SDK and Application Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+        
+        // Your hardcoded Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBtAMVkkLbsixhhQPjQByDdj2uuJ7k0JHI",
+            authDomain: "flashcards-63471.firebaseapp.com",
+            projectId: "flashcards-63471",
+            storageBucket: "flashcards-63471.firebasestorage.app",
+            messagingSenderId: "763890257800",
+            appId: "1:763890257800:web:f81542c34eb8b0a965743d"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        // State management
+        let currentView = '';
+        let selectedSubject = '';
+        let selectedGrade = '';
+        let flashcardSet = [];
+        let currentCardIndex = 0;
+
+        // Sample data for flashcards (hardcoded in the client)
+        const sampleFlashcards = {
+            math: {
+                '1st': [
+                    { question: 'What is $2 + 3$?', answer: '$5$' },
+                    { question: 'What is $5 - 1$?', answer: '$4$' },
+                    { question: 'What is $6 + 4$?', answer: '$10$' },
+                    { question: 'What is $9 - 3$?', answer: '$6$' },
+                    { question: 'What is $1 + 8$?', answer: '$9$' },
+                    { question: 'What is $7 + 2$?', answer: '$9$' },
+                    { question: 'What is $10 - 5$?', answer: '$5$' },
+                    { question: 'What is $4 + 4$?', answer: '$8$' },
+                    { question: 'What is $8 - 2$?', answer: '$6$' },
+                    { question: 'What is $3 + 6$?', answer: '$9$' },
+                    { question: 'What is $5 + 5$?', answer: '$10$' },
+                    { question: 'What is $10 - 8$?', answer: '$2$' },
+                    { question: 'What is $1 + 9$?', answer: '$10$' },
+                    { question: 'What is $7 - 3$?', answer: '$4$' },
+                    { question: 'What is $2 + 5$?', answer: '$7$' },
+                ],
+                '2nd': [
+                    { question: 'What is $15 + 7$?', answer: '$22$' },
+                    { question: 'What is $20 - 9$?', answer: '$11$' },
+                    { question: 'What is $3 \\times 4$?', answer: '$12$' },
+                    { question: 'What is $18 \\div 2$?', answer: '$9$' },
+                    { question: 'What is $25 + 10$?', answer: '$35$' },
+                    { question: 'What is $30 - 15$?', answer: '$15$' },
+                    { question: 'What is $5 \\times 6$?', answer: '$30$' },
+                    { question: 'What is $21 \\div 3$?', answer: '$7$' },
+                    { question: 'What is $40 + 12$?', answer: '$52$' },
+                    { question: 'What is $50 - 25$?', answer: '$25$' },
+                ],
+                '3rd': [
+                    { question: 'What is $12 \\times 12$?', answer: '$144$' },
+                    { question: 'What is $81 \\div 9$?', answer: '$9$' },
+                    { question: 'What is $250 + 75$?', answer: '$325$' },
+                    { question: 'What is $1000 - 450$?', answer: '$550$' },
+                    { question: 'What is $15 \\times 7$?', answer: '$105$' },
+                    { question: 'What is $42 \\div 6$?', answer: '$7$' },
+                    { question: 'What is the perimeter of a square with a side length of 5 cm?', answer: '$20$ cm' },
+                    { question: 'What is the area of a rectangle with length 8 in and width 4 in?', answer: '$32$ square inches' },
+                ],
+            },
+            writing: {
+                '1st': [
+                    { question: 'Spell the word for a big red fruit.', answer: 'Apple' },
+                    { question: 'Spell the word for a small insect with wings.', answer: 'Bug' },
+                    { question: 'Spell the word for the sound a dog makes.', answer: 'Bark' },
+                    { question: 'Spell the word for a type of pet with a long tail.', answer: 'Cat' },
+                    { question: 'Spell the word for the number after two.', answer: 'Three' },
+                    { question: 'Spell the word for a big flying animal.', answer: 'Bird' },
+                    { question: 'Spell the word for a place you sleep.', answer: 'Bed' },
+                    { question: 'Spell the word for something that lights up at night.', answer: 'Star' },
+                ],
+                '2nd': [
+                    { question: 'Correct the spelling: "hapy"', answer: 'Happy' },
+                    { question: 'Correct the spelling: "frend"', answer: 'Friend' },
+                    { question: 'What is a noun?', answer: 'A person, place, or thing.' },
+                    { question: 'What is a verb?', answer: 'An action word.' },
+                    { question: 'What is an adjective?', answer: 'A word that describes a noun.' },
+                    { question: 'Write a sentence using the word "run".', answer: 'The boy will run fast.' },
+                    { question: 'Correct the spelling: "beautful"', answer: 'Beautiful' },
+                ],
+                '3rd': [
+                    { question: 'Write a sentence using a comma.', answer: 'I like apples, bananas, and oranges.' },
+                    { question: 'What is a compound sentence?', answer: 'A sentence with two or more independent clauses.' },
+                    { question: 'Correct the spelling: "definately"', answer: 'Definitely' },
+                    { question: 'What is a synonym for "big"?', answer: 'Large, gigantic, huge.' },
+                    { question: 'What is an antonym for "hot"?', answer: 'Cold' },
+                    { question: 'Write a short paragraph about your favorite animal.', answer: 'Responses will vary, but should include a topic sentence and supporting details.' },
+                ],
+            },
+            reading: {
+                '1st': [
+                    { question: 'What is the first letter of "cat"?', answer: 'C' },
+                    { question: 'What sound does the letter "s" make?', answer: 'Sss' },
+                    { question: 'What is a sentence?', answer: 'A group of words that tells a complete idea.' },
+                    { question: 'Read and say the word: "red"', answer: 'Red' },
+                    { question: 'Read and say the word: "sun"', answer: 'Sun' },
+                    { question: 'What is a rhyming word for "cat"?', answer: 'Hat, bat, sat' },
+                ],
+                '2nd': [
+                    { question: 'What is a main idea?', answer: 'The most important point or message of a text.' },
+                    { question: 'What is a detail?', answer: 'A piece of information that supports the main idea.' },
+                    { question: 'What is a synonym?', answer: 'A word that means the same as another word.' },
+                    { question: 'What is a fable?', answer: 'A short story with a moral lesson.' },
+                    { question: 'What is a character in a story?', answer: 'A person or animal in the story.' },
+                ],
+                '3rd': [
+                    { question: 'What is a summary?', answer: 'A brief statement of the main points of a text.' },
+                    { question: 'What is the purpose of a paragraph?', answer: 'To present a single, focused idea.' },
+                    { question: 'What is inferencing?', answer: 'Using clues from a text to figure out what is not directly stated.' },
+                    { question: 'What is a simile?', answer: 'A comparison using "like" or "as".' },
+                    { question: 'What is a metaphor?', answer: 'A direct comparison without using "like" or "as".' },
+                ],
+            },
+        };
+
+        const appContainer = document.getElementById('app-container');
+        const contentContainer = document.getElementById('content-container');
+        const userIdElement = document.getElementById('user-id');
+        let userId = '';
+
+        // --- Functions to manage UI views ---
+        const showHomeView = () => {
+            currentView = 'home';
+            contentContainer.innerHTML = `
+                <div class="flex flex-col items-center p-6 bg-gray-800 rounded-xl shadow-lg w-full">
+                    <h2 class="text-3xl font-bold mb-6 text-white text-center">Flashcard App</h2>
+                    <button id="create-session-btn"
+                        class="w-full px-6 py-3 text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-all duration-200">
+                        Create Flashcard Session
+                    </button>
+                </div>
+            `;
+            document.getElementById('create-session-btn').addEventListener('click', showCreateSessionView);
+        };
+
+        const showCreateSessionView = (message = null) => {
+            currentView = 'createSession';
+            contentContainer.innerHTML = `
+                <div class="flex flex-col items-center p-6 bg-gray-800 rounded-xl shadow-lg w-full">
+                    <h2 class="text-3xl font-bold mb-6 text-white">Create a Session</h2>
+                    ${message ? `<div class="text-red-400 mb-4">${message}</div>` : ''}
+                    
+                    <div class="w-full mb-6">
+                        <label for="subject-select" class="block text-white mb-2">Select Subject</label>
+                        <select id="subject-select" class="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="" disabled selected>-- Choose a Subject --</option>
+                            ${Object.keys(sampleFlashcards).map(subject => `<option value="${subject}">${subject.charAt(0).toUpperCase() + subject.slice(1)}</option>`).join('')}
+                        </select>
+                    </div>
+
+                    <div class="w-full mb-6">
+                        <label for="grade-select" class="block text-white mb-2">Select Grade</label>
+                        <select id="grade-select" class="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="" disabled selected>-- Choose a Grade --</option>
+                        </select>
+                    </div>
+
+                    <button id="start-session-btn"
+                        class="w-full px-6 py-3 text-lg font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-md transition-all duration-200">
+                        Start Session
+                    </button>
+                    <button id="back-btn"
+                        class="w-full mt-4 px-6 py-3 text-lg font-semibold text-gray-300 bg-gray-600 hover:bg-gray-700 rounded-lg shadow-md transition-all duration-200">
+                        Back
+                    </button>
+                </div>
+            `;
+
+            const subjectSelect = document.getElementById('subject-select');
+            const gradeSelect = document.getElementById('grade-select');
+            const startBtn = document.getElementById('start-session-btn');
+            const backBtn = document.getElementById('back-btn');
+
+            subjectSelect.addEventListener('change', () => {
+                selectedSubject = subjectSelect.value;
+                gradeSelect.innerHTML = `<option value="" disabled selected>-- Choose a Grade --</option>`;
+                if (selectedSubject && sampleFlashcards[selectedSubject]) {
+                    Object.keys(sampleFlashcards[selectedSubject]).forEach(grade => {
+                        const option = document.createElement('option');
+                        option.value = grade;
+                        option.textContent = grade.charAt(0).toUpperCase() + grade.slice(1) + ' Grade';
+                        gradeSelect.appendChild(option);
+                    });
+                }
+            });
+
+            startBtn.addEventListener('click', () => {
+                selectedGrade = gradeSelect.value;
+                if (!selectedSubject || !selectedGrade) {
+                    showCreateSessionView('Please select a subject and a grade.');
+                    return;
+                }
+                startSession();
+            });
+
+            backBtn.addEventListener('click', showHomeView);
+        };
+
+        const showFlashcardSessionView = (message = null) => {
+            currentView = 'flashcardSession';
+            const currentCard = flashcardSet[currentCardIndex];
+            contentContainer.innerHTML = `
+                <div class="flex flex-col items-center p-6 bg-gray-800 rounded-xl shadow-lg w-full max-w-xl min-h-[30rem]">
+                    <h2 class="text-2xl font-bold text-white mb-4 text-center">
+                        ${selectedSubject.charAt(0).toUpperCase() + selectedSubject.slice(1)} - ${selectedGrade.charAt(0).toUpperCase() + selectedGrade.slice(1)} Grade
+                    </h2>
+                    <div class="text-lg text-gray-400 mb-6">
+                        Card ${currentCardIndex + 1} of ${flashcardSet.length}
+                    </div>
+
+                    <div id="flashcard" class="flashcard-container rounded-xl w-full cursor-pointer h-72">
+                        <div id="flashcard-front" class="flashcard-content rounded-xl text-white">
+                            <div class="text-4xl font-semibold mb-4">Question</div>
+                            <div class="text-2xl font-light">${currentCard.question}</div>
+                        </div>
+                        <div id="flashcard-back" class="flashcard-content rounded-xl text-white">
+                            <div class="text-4xl font-semibold mb-4">Answer</div>
+                            <div class="text-2xl font-light">${currentCard.answer}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between w-full mt-8">
+                        <button id="prev-btn"
+                            class="px-6 py-3 text-lg font-semibold text-white rounded-lg shadow-md transition-all duration-200 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 disabled:cursor-not-allowed">
+                            Previous
+                        </button>
+                        <button id="next-btn"
+                            class="px-6 py-3 text-lg font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-lg shadow-md transition-all duration-200">
+                            Next
+                        </button>
+                    </div>
+                    
+                    <button id="end-session-btn"
+                        class="mt-6 px-6 py-3 text-lg font-semibold text-gray-300 bg-gray-600 hover:bg-gray-700 rounded-lg shadow-md transition-all duration-200">
+                        End Session
+                    </button>
+                    ${message ? `<div id="session-message" class="text-green-400 mt-4">${message}</div>` : ''}
+                </div>
+            `;
+            
+            const flashcard = document.getElementById('flashcard');
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const endBtn = document.getElementById('end-session-btn');
+
+            flashcard.addEventListener('click', () => {
+                flashcard.classList.toggle('flipped');
+            });
+            prevBtn.addEventListener('click', prevCard);
+            nextBtn.addEventListener('click', nextCard);
+            endBtn.addEventListener('click', () => {
+                flashcardSet = [];
+                currentCardIndex = 0;
+                showHomeView();
+            });
+
+            if (currentCardIndex === 0) {
+                prevBtn.disabled = true;
+            }
+        };
+
+        // --- Application Logic Functions ---
+        const startSession = () => {
+            flashcardSet = sampleFlashcards[selectedSubject][selectedGrade];
+            currentCardIndex = 0;
+            showFlashcardSessionView();
+        };
+
+        const nextCard = () => {
+            const flashcard = document.getElementById('flashcard');
+            if (flashcard.classList.contains('flipped')) {
+                flashcard.classList.remove('flipped');
+            }
+            // Add a small delay for the flip animation to finish
+            setTimeout(() => {
+                if (currentCardIndex < flashcardSet.length - 1) {
+                    currentCardIndex++;
+                    showFlashcardSessionView();
+                } else {
+                    showFlashcardSessionView("You've completed this session!");
+                    document.getElementById('next-btn').disabled = true;
+                }
+            }, 500);
+        };
+
+        const prevCard = () => {
+            const flashcard = document.getElementById('flashcard');
+            if (flashcard.classList.contains('flipped')) {
+                flashcard.classList.remove('flipped');
+            }
+            setTimeout(() => {
+                if (currentCardIndex > 0) {
+                    currentCardIndex--;
+                    showFlashcardSessionView();
+                }
+            }, 500);
+        };
+
+        // --- Main execution on page load ---
+        window.onload = () => {
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    userIdElement.textContent = `User ID: ${userId}`;
+                    
+                    const flashcardsRef = ref(db, `users/${userId}/flashcards`);
+                    // Use onValue to listen for data changes
+                    onValue(flashcardsRef, (snapshot) => {
+                        const data = snapshot.val();
+                        if (!data) {
+                            // If no data exists for the user, push the sample data
+                            set(flashcardsRef, sampleFlashcards)
+                                .then(() => console.log("Sample data successfully written to Realtime Database."))
+                                .catch(error => console.error("Error writing sample data: ", error));
+                        } else {
+                            console.log("Flashcard data loaded from Realtime Database.");
+                        }
+                    }, { onlyOnce: true });
+                    
+                    showHomeView();
+                } else {
+                    // Sign in anonymously if no user is found
+                    signInAnonymously(auth).catch(error => {
+                        console.error("Anonymous sign-in failed:", error);
+                        contentContainer.innerHTML = '<div class="text-red-500">Failed to sign in. Please check the console for details.</div>';
+                    });
+                }
+            });
+        };
+    </script>
+</body>
+</html>
+
