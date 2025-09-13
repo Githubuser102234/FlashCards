@@ -42,22 +42,36 @@
         .flipped .flashcard-back {
             transform: rotateY(360deg);
         }
+
+        /* Shimmer effect for loading placeholders */
+        .shimmer {
+            background: #2d3748;
+            background-image: linear-gradient(to right, #2d3748 0%, #4a5568 20%, #2d3748 40%, #2d3748 100%);
+            background-repeat: no-repeat;
+            background-size: 800px 104px;
+            animation: shimmer 1.2s linear infinite;
+        }
+        @keyframes shimmer {
+            0% {
+                background-position: -468px 0;
+            }
+            100% {
+                background-position: 468px 0;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen p-4">
 
-    <!-- Main Container -->
     <div id="app-container" class="w-full max-w-xl flex flex-col items-center">
         <div class="text-center mb-6">
             <h1 class="text-4xl font-extrabold text-blue-400">Flashcard Master</h1>
             <p id="user-id-display" class="text-sm text-gray-400 mt-2"></p>
         </div>
 
-        <!-- The main application content will be rendered here -->
         <div id="content-container" class="w-full"></div>
     </div>
 
-    <!-- Firebase SDK and Application Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
@@ -118,6 +132,18 @@
                     { question: 'What is the square root of $64$?', answer: '$8$' },
                     { question: 'What is the decimal equivalent of $3/4$?', answer: '$0.75$' },
                 ],
+                '5th': [
+                    { question: 'What is the value of $2^5$?', answer: '$32$' },
+                    { question: 'What is the least common multiple of 6 and 8?', answer: '$24$' },
+                    { question: 'What is the greatest common divisor of 18 and 24?', answer: '$6$' },
+                    { question: 'Solve for x: $x + 15 = 40$.', answer: '$x = 25$' },
+                ],
+                '6th': [
+                    { question: 'What is the area of a triangle with a base of 10cm and height of 8cm?', answer: '$40$ cm' },
+                    { question: 'What is the value of $\\pi$ (rounded to two decimal places)?', answer: '$3.14$' },
+                    { question: 'What is the circumference of a circle with a radius of 5 inches?', answer: '$10\\pi$ inches' },
+                    { question: 'What is the value of $20\%$ of $150$?', answer: '$30$' },
+                ],
             },
             history: {
                 '4th': [
@@ -137,6 +163,12 @@
                     { question: 'What was the Industrial Revolution?', answer: 'A period of major changes in technology and industry' },
                     { question: 'Who wrote the Declaration of Independence?', answer: 'Thomas Jefferson' },
                     { question: 'What was the Cold War?', answer: 'A state of political and military tension between the U.S. and the Soviet Union' },
+                ],
+                '10th': [
+                    { question: 'Who was the leader of the Soviet Union during World War II?', answer: 'Joseph Stalin' },
+                    { question: 'What major event is considered the start of the Great Depression?', answer: 'The Stock Market Crash of 1929' },
+                    { question: 'What was the purpose of the United Nations?', answer: 'To maintain international peace and security' },
+                    { question: 'What ancient city was home to the Colosseum?', answer: 'Rome' },
                 ],
             },
             science: {
@@ -158,6 +190,12 @@
                     { question: 'Who developed the theory of relativity?', answer: 'Albert Einstein' },
                     { question: 'What is a black hole?', answer: 'A region of spacetime where gravity is so strong nothing can escape' },
                 ],
+                '11th': [
+                    { question: 'What is the primary function of DNA?', answer: 'To store and transmit genetic information' },
+                    { question: 'What is the process of cell division that results in four daughter cells with half the number of chromosomes?', answer: 'Meiosis' },
+                    { question: 'What is the powerhouse of the cell?', answer: 'Mitochondria' },
+                    { question: 'What does pH measure?', answer: 'The acidity or basicity of a solution' },
+                ],
             },
             geography: {
                 '4th': [
@@ -178,6 +216,12 @@
                     { question: 'What is urbanization?', answer: 'The process of a population shifting from rural to urban areas' },
                     { question: 'What is the highest point on Earth?', answer: 'Mount Everest' },
                 ],
+                '12th': [
+                    { question: 'What is the study of the Earth\'s physical features and atmosphere called?', answer: 'Physical geography' },
+                    { question: 'What are the names of the five Great Lakes?', answer: 'Huron, Ontario, Michigan, Erie, Superior' },
+                    { question: 'What is a fjord?', answer: 'A long, narrow, deep inlet of the sea between high cliffs' },
+                    { question: 'What is the Ring of Fire?', answer: 'A major area in the basin of the Pacific Ocean where a large number of earthquakes and volcanic eruptions occur' },
+                ],
             }
         };
 
@@ -186,6 +230,19 @@
         let userId = '';
 
         // --- Functions to manage UI views ---
+        const showLoadingPlaceholder = () => {
+            contentContainer.innerHTML = `
+                <div class="flex flex-col items-center p-6 bg-gray-800 rounded-xl shadow-lg w-full mb-6 shimmer h-48 animate-pulse"></div>
+                <div class="w-full">
+                    <h3 class="text-2xl font-bold text-white mb-4">Your Active Sessions</h3>
+                    <div id="sessions-list" class="flex flex-col gap-4">
+                        <div class="bg-gray-800 p-4 rounded-lg shadow shimmer h-20 w-full animate-pulse"></div>
+                        <div class="bg-gray-800 p-4 rounded-lg shadow shimmer h-20 w-full animate-pulse"></div>
+                    </div>
+                </div>
+            `;
+        };
+
         const showHomeView = () => {
             currentView = 'home';
             contentContainer.innerHTML = `
@@ -252,7 +309,7 @@
                     const sessionId = event.target.dataset.sessionId;
                     if (event.target.dataset.action === 'start') {
                         // Navigate to the session URL to handle the start logic
-                        window.location.href = `/?sessionid=${sessionId}`;
+                        window.location.href = `https://githubuser102234.github.io/FlashCards/?sessionid=${sessionId}`;
                     } else if (event.target.dataset.action === 'delete') {
                         deleteSession(sessionId);
                     }
@@ -377,7 +434,7 @@
             prevBtn.addEventListener('click', prevCard);
             nextBtn.addEventListener('click', nextCard);
             endBtn.addEventListener('click', () => {
-                window.location.href = window.location.origin;
+                window.location.href = `https://githubuser102234.github.io/FlashCards/`;
             });
 
             if (currentCardIndex === 0) {
@@ -401,7 +458,7 @@
             try {
                 await set(newSessionRef, newSession);
                 // Redirect to the new session URL
-                window.location.href = `/?sessionid=${newSessionRef.key}`;
+                window.location.href = `https://githubuser102234.github.io/FlashCards/?sessionid=${newSessionRef.key}`;
             } catch (error) {
                 console.error("Error creating new session:", error);
                 showCreateSessionView('Failed to create session. Please try again.');
@@ -429,7 +486,7 @@
                     showFlashcardSessionView();
                 } else {
                     console.error("Session not found:", sessionId);
-                    window.location.href = window.location.origin; // Redirect to home
+                    window.location.href = `https://githubuser102234.github.io/FlashCards/`; // Redirect to home
                 }
             }, { onlyOnce: true });
         };
@@ -474,6 +531,9 @@
 
         // --- Main execution on page load ---
         window.onload = () => {
+            // Show loading placeholder immediately
+            showLoadingPlaceholder();
+            
             onAuthStateChanged(auth, async (user) => {
                 if (user) {
                     userId = user.uid;
