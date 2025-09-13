@@ -27,6 +27,7 @@
             align-items: center;
             justify-content: center;
             padding: 2rem;
+            text-align: center;
         }
         .flashcard-front {
             background-color: #1f2937;
@@ -393,14 +394,14 @@
                         Card ${currentCardIndex + 1} of ${flashcardSet.length}
                     </div>
 
-                    <div id="flashcard" class="flashcard-container rounded-xl w-full cursor-pointer h-72">
-                        <div id="flashcard-front" class="flashcard-content rounded-xl text-white">
+                    <div id="flashcard" class="flashcard-container rounded-xl w-full cursor-pointer min-h-[15rem]">
+                        <div id="flashcard-front" class="flashcard-content rounded-xl text-white flex-col text-center">
                             <div class="text-4xl font-semibold mb-4">Question</div>
-                            <div class="text-2xl font-light">${currentCard.question}</div>
+                            <div class="text-2xl font-light overflow-y-auto flex-1">${currentCard.question}</div>
                         </div>
-                        <div id="flashcard-back" class="flashcard-content rounded-xl text-white">
+                        <div id="flashcard-back" class="flashcard-content rounded-xl text-white flex-col text-center">
                             <div class="text-4xl font-semibold mb-4">Answer</div>
-                            <div class="text-2xl font-light">${currentCard.answer}</div>
+                            <div class="text-2xl font-light overflow-y-auto flex-1">${currentCard.answer}</div>
                         </div>
                     </div>
                     
