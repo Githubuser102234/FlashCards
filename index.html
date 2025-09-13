@@ -75,7 +75,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-        import { getDatabase, ref, set, onValue, push, remove } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+        import { getDatabase, ref, set, onValue, push, remove, get } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
         
         // Your hardcoded Firebase configuration
         const firebaseConfig = {
@@ -477,18 +477,28 @@
 
         const loadSession = async (sessionId) => {
             const sessionRef = ref(db, `users/${userId}/sessions/${sessionId}`);
-            onValue(sessionRef, (snapshot) => {
+            try {
+                const snapshot = await get(sessionRef);
                 const session = snapshot.val();
                 if (session) {
                     selectedSessionId = sessionId;
                     flashcardSet = JSON.parse(session.flashcards);
                     currentCardIndex = session.currentCardIndex || 0;
-                    showFlashcardSessionView();
+                    // Fetch all sessions to ensure the home view works correctly after ending a session
+                    const allSessionsRef = ref(db, `users/${userId}/sessions`);
+                    onValue(allSessionsRef, (snapshot) => {
+                        sessions = snapshot.val() || {};
+                        // Now render the flashcard view after all data is loaded
+                        showFlashcardSessionView();
+                    }, { onlyOnce: true });
                 } else {
                     console.error("Session not found:", sessionId);
                     window.location.href = `https://githubuser102234.github.io/FlashCards/`; // Redirect to home
                 }
-            }, { onlyOnce: true });
+            } catch (error) {
+                console.error("Error loading session:", error);
+                window.location.href = `https://githubuser102234.github.io/FlashCards/`; // Redirect to home
+            }
         };
         
         const nextCard = async () => {
