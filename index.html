@@ -50,7 +50,7 @@
     <div id="app-container" class="w-full max-w-xl flex flex-col items-center">
         <div class="text-center mb-6">
             <h1 class="text-4xl font-extrabold text-blue-400">Flashcard Master</h1>
-            <p id="user-id" class="text-sm text-gray-400 mt-2"></p>
+            <p id="user-id-display" class="text-sm text-gray-400 mt-2"></p>
         </div>
 
         <!-- The main application content will be rendered here -->
@@ -61,7 +61,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+        import { getDatabase, ref, set, onValue, push, remove } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
         
         // Your hardcoded Firebase configuration
         const firebaseConfig = {
@@ -80,127 +80,184 @@
 
         // State management
         let currentView = '';
-        let selectedSubject = '';
-        let selectedGrade = '';
+        let sessions = {};
+        let selectedSessionId = null;
         let flashcardSet = [];
         let currentCardIndex = 0;
 
-        // Sample data for flashcards (hardcoded in the client)
+        // Sample data for flashcards
         const sampleFlashcards = {
             math: {
                 '1st': [
-                    { question: 'What is $2 + 3$?', answer: '$5$' },
-                    { question: 'What is $5 - 1$?', answer: '$4$' },
-                    { question: 'What is $6 + 4$?', answer: '$10$' },
-                    { question: 'What is $9 - 3$?', answer: '$6$' },
-                    { question: 'What is $1 + 8$?', answer: '$9$' },
-                    { question: 'What is $7 + 2$?', answer: '$9$' },
-                    { question: 'What is $10 - 5$?', answer: '$5$' },
-                    { question: 'What is $4 + 4$?', answer: '$8$' },
-                    { question: 'What is $8 - 2$?', answer: '$6$' },
-                    { question: 'What is $3 + 6$?', answer: '$9$' },
-                    { question: 'What is $5 + 5$?', answer: '$10$' },
-                    { question: 'What is $10 - 8$?', answer: '$2$' },
-                    { question: 'What is $1 + 9$?', answer: '$10$' },
-                    { question: 'What is $7 - 3$?', answer: '$4$' },
+                    { question: 'What is $2 + 3$?', answer: '$5$' }, { question: 'What is $5 - 1$?', answer: '$4$' },
+                    { question: 'What is $6 + 4$?', answer: '$10$' }, { question: 'What is $9 - 3$?', answer: '$6$' },
+                    { question: 'What is $1 + 8$?', answer: '$9$' }, { question: 'What is $7 + 2$?', answer: '$9$' },
+                    { question: 'What is $10 - 5$?', answer: '$5$' }, { question: 'What is $4 + 4$?', answer: '$8$' },
+                    { question: 'What is $8 - 2$?', answer: '$6$' }, { question: 'What is $3 + 6$?', answer: '$9$' },
+                    { question: 'What is $5 + 5$?', answer: '$10$' }, { question: 'What is $10 - 8$?', answer: '$2$' },
+                    { question: 'What is $1 + 9$?', answer: '$10$' }, { question: 'What is $7 - 3$?', answer: '$4$' },
                     { question: 'What is $2 + 5$?', answer: '$7$' },
                 ],
                 '2nd': [
-                    { question: 'What is $15 + 7$?', answer: '$22$' },
-                    { question: 'What is $20 - 9$?', answer: '$11$' },
-                    { question: 'What is $3 \\times 4$?', answer: '$12$' },
-                    { question: 'What is $18 \\div 2$?', answer: '$9$' },
-                    { question: 'What is $25 + 10$?', answer: '$35$' },
-                    { question: 'What is $30 - 15$?', answer: '$15$' },
-                    { question: 'What is $5 \\times 6$?', answer: '$30$' },
-                    { question: 'What is $21 \\div 3$?', answer: '$7$' },
-                    { question: 'What is $40 + 12$?', answer: '$52$' },
-                    { question: 'What is $50 - 25$?', answer: '$25$' },
+                    { question: 'What is $15 + 7$?', answer: '$22$' }, { question: 'What is $20 - 9$?', answer: '$11$' },
+                    { question: 'What is $3 \\times 4$?', answer: '$12$' }, { question: 'What is $18 \\div 2$?', answer: '$9$' },
+                    { question: 'What is $25 + 10$?', answer: '$35$' }, { question: 'What is $30 - 15$?', answer: '$15$' },
+                    { question: 'What is $5 \\times 6$?', answer: '$30$' }, { question: 'What is $21 \\div 3$?', answer: '$7$' },
+                    { question: 'What is $40 + 12$?', answer: '$52$' }, { question: 'What is $50 - 25$?', answer: '$25$' },
                 ],
                 '3rd': [
-                    { question: 'What is $12 \\times 12$?', answer: '$144$' },
-                    { question: 'What is $81 \\div 9$?', answer: '$9$' },
-                    { question: 'What is $250 + 75$?', answer: '$325$' },
-                    { question: 'What is $1000 - 450$?', answer: '$550$' },
-                    { question: 'What is $15 \\times 7$?', answer: '$105$' },
-                    { question: 'What is $42 \\div 6$?', answer: '$7$' },
+                    { question: 'What is $12 \\times 12$?', answer: '$144$' }, { question: 'What is $81 \\div 9$?', answer: '$9$' },
+                    { question: 'What is $250 + 75$?', answer: '$325$' }, { question: 'What is $1000 - 450$?', answer: '$550$' },
+                    { question: 'What is $15 \\times 7$?', answer: '$105$' }, { question: 'What is $42 \\div 6$?', answer: '$7$' },
                     { question: 'What is the perimeter of a square with a side length of 5 cm?', answer: '$20$ cm' },
                     { question: 'What is the area of a rectangle with length 8 in and width 4 in?', answer: '$32$ square inches' },
                 ],
-            },
-            writing: {
-                '1st': [
-                    { question: 'Spell the word for a big red fruit.', answer: 'Apple' },
-                    { question: 'Spell the word for a small insect with wings.', answer: 'Bug' },
-                    { question: 'Spell the word for the sound a dog makes.', answer: 'Bark' },
-                    { question: 'Spell the word for a type of pet with a long tail.', answer: 'Cat' },
-                    { question: 'Spell the word for the number after two.', answer: 'Three' },
-                    { question: 'Spell the word for a big flying animal.', answer: 'Bird' },
-                    { question: 'Spell the word for a place you sleep.', answer: 'Bed' },
-                    { question: 'Spell the word for something that lights up at night.', answer: 'Star' },
-                ],
-                '2nd': [
-                    { question: 'Correct the spelling: "hapy"', answer: 'Happy' },
-                    { question: 'Correct the spelling: "frend"', answer: 'Friend' },
-                    { question: 'What is a noun?', answer: 'A person, place, or thing.' },
-                    { question: 'What is a verb?', answer: 'An action word.' },
-                    { question: 'What is an adjective?', answer: 'A word that describes a noun.' },
-                    { question: 'Write a sentence using the word "run".', answer: 'The boy will run fast.' },
-                    { question: 'Correct the spelling: "beautful"', answer: 'Beautiful' },
-                ],
-                '3rd': [
-                    { question: 'Write a sentence using a comma.', answer: 'I like apples, bananas, and oranges.' },
-                    { question: 'What is a compound sentence?', answer: 'A sentence with two or more independent clauses.' },
-                    { question: 'Correct the spelling: "definately"', answer: 'Definitely' },
-                    { question: 'What is a synonym for "big"?', answer: 'Large, gigantic, huge.' },
-                    { question: 'What is an antonym for "hot"?', answer: 'Cold' },
-                    { question: 'Write a short paragraph about your favorite animal.', answer: 'Responses will vary, but should include a topic sentence and supporting details.' },
+                '4th': [
+                    { question: 'What is the value of $12 \\times 15$?', answer: '$180$' },
+                    { question: 'What is the product of $25$ and $8$?', answer: '$200$' },
+                    { question: 'What is the square root of $64$?', answer: '$8$' },
+                    { question: 'What is the decimal equivalent of $3/4$?', answer: '$0.75$' },
                 ],
             },
-            reading: {
-                '1st': [
-                    { question: 'What is the first letter of "cat"?', answer: 'C' },
-                    { question: 'What sound does the letter "s" make?', answer: 'Sss' },
-                    { question: 'What is a sentence?', answer: 'A group of words that tells a complete idea.' },
-                    { question: 'Read and say the word: "red"', answer: 'Red' },
-                    { question: 'Read and say the word: "sun"', answer: 'Sun' },
-                    { question: 'What is a rhyming word for "cat"?', answer: 'Hat, bat, sat' },
+            history: {
+                '4th': [
+                    { question: 'Who was the first President of the United States?', answer: 'George Washington' },
+                    { question: 'In what year did the United States declare independence?', answer: '1776' },
+                    { question: 'What ancient civilization built the pyramids?', answer: 'Ancient Egypt' },
+                    { question: 'What was the name of the ship the Pilgrims sailed on?', answer: 'The Mayflower' },
                 ],
-                '2nd': [
-                    { question: 'What is a main idea?', answer: 'The most important point or message of a text.' },
-                    { question: 'What is a detail?', answer: 'A piece of information that supports the main idea.' },
-                    { question: 'What is a synonym?', answer: 'A word that means the same as another word.' },
-                    { question: 'What is a fable?', answer: 'A short story with a moral lesson.' },
-                    { question: 'What is a character in a story?', answer: 'A person or animal in the story.' },
+                '6th': [
+                    { question: 'What was the Silk Road?', answer: 'A trade route connecting East and West' },
+                    { question: 'What is a democracy?', answer: 'A government where citizens vote for their leaders' },
+                    { question: 'Who was Julius Caesar?', answer: 'A Roman general and dictator' },
+                    { question: 'What did the Magna Carta do?', answer: 'Limited the power of the king' },
                 ],
-                '3rd': [
-                    { question: 'What is a summary?', answer: 'A brief statement of the main points of a text.' },
-                    { question: 'What is the purpose of a paragraph?', answer: 'To present a single, focused idea.' },
-                    { question: 'What is inferencing?', answer: 'Using clues from a text to figure out what is not directly stated.' },
-                    { question: 'What is a simile?', answer: 'A comparison using "like" or "as".' },
-                    { question: 'What is a metaphor?', answer: 'A direct comparison without using "like" or "as".' },
+                '9th': [
+                    { question: 'What were the main causes of World War I?', answer: 'Militarism, Alliances, Imperialism, Nationalism' },
+                    { question: 'What was the Industrial Revolution?', answer: 'A period of major changes in technology and industry' },
+                    { question: 'Who wrote the Declaration of Independence?', answer: 'Thomas Jefferson' },
+                    { question: 'What was the Cold War?', answer: 'A state of political and military tension between the U.S. and the Soviet Union' },
                 ],
             },
+            science: {
+                '4th': [
+                    { question: 'What is the name of the planet closest to the sun?', answer: 'Mercury' },
+                    { question: 'What is the process called when a caterpillar turns into a butterfly?', answer: 'Metamorphosis' },
+                    { question: 'What is the largest organ in the human body?', answer: 'Skin' },
+                    { question: 'What state of matter is water vapor?', answer: 'Gas' },
+                ],
+                '6th': [
+                    { question: 'What is photosynthesis?', answer: 'The process plants use to make food from sunlight' },
+                    { question: 'What is the Law of Conservation of Energy?', answer: 'Energy cannot be created or destroyed' },
+                    { question: 'What are the three states of matter?', answer: 'Solid, liquid, and gas' },
+                    { question: 'What does a barometer measure?', answer: 'Air pressure' },
+                ],
+                '9th': [
+                    { question: 'What is a covalent bond?', answer: 'A chemical bond formed by the sharing of electrons' },
+                    { question: 'What is the SI unit of force?', answer: 'Newton' },
+                    { question: 'Who developed the theory of relativity?', answer: 'Albert Einstein' },
+                    { question: 'What is a black hole?', answer: 'A region of spacetime where gravity is so strong nothing can escape' },
+                ],
+            },
+            geography: {
+                '4th': [
+                    { question: 'What is the largest ocean?', answer: 'The Pacific Ocean' },
+                    { question: 'What continent is the Amazon Rainforest on?', answer: 'South America' },
+                    { question: 'What is a country entirely within the city of Rome, Italy?', answer: 'Vatican City' },
+                    { question: 'What is the capital of Japan?', answer: 'Tokyo' },
+                ],
+                '6th': [
+                    { question: 'What is the longest river in the world?', answer: 'The Nile' },
+                    { question: 'What mountain range runs through the western part of North America?', answer: 'The Rocky Mountains' },
+                    { question: 'What is a delta?', answer: 'A landform created by deposition of sediment at the mouth of a river' },
+                    { question: 'What is the largest country in the world by area?', answer: 'Russia' },
+                ],
+                '9th': [
+                    { question: 'What is the name of the imaginary line that divides the Earth into the Northern and Southern Hemispheres?', answer: 'The Equator' },
+                    { question: 'What is a geopolitical conflict?', answer: 'A conflict influenced by both geography and politics' },
+                    { question: 'What is urbanization?', answer: 'The process of a population shifting from rural to urban areas' },
+                    { question: 'What is the highest point on Earth?', answer: 'Mount Everest' },
+                ],
+            }
         };
 
-        const appContainer = document.getElementById('app-container');
         const contentContainer = document.getElementById('content-container');
-        const userIdElement = document.getElementById('user-id');
+        const userIdElement = document.getElementById('user-id-display');
         let userId = '';
 
         // --- Functions to manage UI views ---
         const showHomeView = () => {
             currentView = 'home';
             contentContainer.innerHTML = `
-                <div class="flex flex-col items-center p-6 bg-gray-800 rounded-xl shadow-lg w-full">
+                <div class="flex flex-col items-center p-6 bg-gray-800 rounded-xl shadow-lg w-full mb-6">
                     <h2 class="text-3xl font-bold mb-6 text-white text-center">Flashcard App</h2>
                     <button id="create-session-btn"
                         class="w-full px-6 py-3 text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-all duration-200">
                         Create Flashcard Session
                     </button>
                 </div>
+                <div class="w-full">
+                    <h3 class="text-2xl font-bold text-white mb-4">Your Active Sessions</h3>
+                    <div id="sessions-list" class="flex flex-col gap-4">
+                        <p class="text-gray-400">Loading sessions...</p>
+                    </div>
+                </div>
             `;
             document.getElementById('create-session-btn').addEventListener('click', showCreateSessionView);
+            
+            // Listen for changes in the user's sessions in the database
+            const sessionsRef = ref(db, `users/${userId}/sessions`);
+            onValue(sessionsRef, (snapshot) => {
+                sessions = snapshot.val() || {};
+                renderSessionsList();
+            });
+        };
+
+        const renderSessionsList = () => {
+            const sessionsList = document.getElementById('sessions-list');
+            if (!sessionsList) return;
+            
+            const sessionKeys = Object.keys(sessions);
+            if (sessionKeys.length === 0) {
+                sessionsList.innerHTML = '<p class="text-gray-400">No active sessions found. Create one to get started!</p>';
+                return;
+            }
+
+            sessionsList.innerHTML = '';
+            sessionKeys.forEach(key => {
+                const session = sessions[key];
+                const sessionEl = document.createElement('div');
+                sessionEl.className = 'bg-gray-800 p-4 rounded-lg shadow flex flex-col sm:flex-row justify-between items-center gap-2';
+                sessionEl.innerHTML = `
+                    <div class="flex flex-col text-sm sm:text-base">
+                        <span class="font-bold text-white">${session.subject.charAt(0).toUpperCase() + session.subject.slice(1)} - ${session.grade.charAt(0).toUpperCase() + session.grade.slice(1)} Grade</span>
+                        <span class="text-gray-400">Created: ${new Date(session.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <div class="flex gap-2 mt-2 sm:mt-0">
+                        <button class="px-4 py-2 text-white bg-green-600 hover:bg-green-700 rounded-lg text-sm transition-all duration-200"
+                            data-action="start" data-session-id="${key}">
+                            Start
+                        </button>
+                        <button class="px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg text-sm transition-all duration-200"
+                            data-action="delete" data-session-id="${key}">
+                            Delete
+                        </button>
+                    </div>
+                `;
+                sessionsList.appendChild(sessionEl);
+            });
+
+            sessionsList.querySelectorAll('button[data-action]').forEach(btn => {
+                btn.addEventListener('click', (event) => {
+                    const sessionId = event.target.dataset.sessionId;
+                    if (event.target.dataset.action === 'start') {
+                        // Navigate to the session URL to handle the start logic
+                        window.location.href = `/?sessionid=${sessionId}`;
+                    } else if (event.target.dataset.action === 'delete') {
+                        deleteSession(sessionId);
+                    }
+                });
+            });
         };
 
         const showCreateSessionView = (message = null) => {
@@ -242,10 +299,10 @@
             const backBtn = document.getElementById('back-btn');
 
             subjectSelect.addEventListener('change', () => {
-                selectedSubject = subjectSelect.value;
+                const subject = subjectSelect.value;
                 gradeSelect.innerHTML = `<option value="" disabled selected>-- Choose a Grade --</option>`;
-                if (selectedSubject && sampleFlashcards[selectedSubject]) {
-                    Object.keys(sampleFlashcards[selectedSubject]).forEach(grade => {
+                if (subject && sampleFlashcards[subject]) {
+                    Object.keys(sampleFlashcards[subject]).forEach(grade => {
                         const option = document.createElement('option');
                         option.value = grade;
                         option.textContent = grade.charAt(0).toUpperCase() + grade.slice(1) + ' Grade';
@@ -255,12 +312,13 @@
             });
 
             startBtn.addEventListener('click', () => {
-                selectedGrade = gradeSelect.value;
-                if (!selectedSubject || !selectedGrade) {
+                const subject = subjectSelect.value;
+                const grade = gradeSelect.value;
+                if (!subject || !grade) {
                     showCreateSessionView('Please select a subject and a grade.');
                     return;
                 }
-                startSession();
+                startSession(subject, grade);
             });
 
             backBtn.addEventListener('click', showHomeView);
@@ -272,7 +330,7 @@
             contentContainer.innerHTML = `
                 <div class="flex flex-col items-center p-6 bg-gray-800 rounded-xl shadow-lg w-full max-w-xl min-h-[30rem]">
                     <h2 class="text-2xl font-bold text-white mb-4 text-center">
-                        ${selectedSubject.charAt(0).toUpperCase() + selectedSubject.slice(1)} - ${selectedGrade.charAt(0).toUpperCase() + selectedGrade.slice(1)} Grade
+                        ${sessions[selectedSessionId].subject.charAt(0).toUpperCase() + sessions[selectedSessionId].subject.slice(1)} - ${sessions[selectedSessionId].grade.charAt(0).toUpperCase() + sessions[selectedSessionId].grade.slice(1)} Grade
                     </h2>
                     <div class="text-lg text-gray-400 mb-6">
                         Card ${currentCardIndex + 1} of ${flashcardSet.length}
@@ -319,9 +377,7 @@
             prevBtn.addEventListener('click', prevCard);
             nextBtn.addEventListener('click', nextCard);
             endBtn.addEventListener('click', () => {
-                flashcardSet = [];
-                currentCardIndex = 0;
-                showHomeView();
+                window.location.href = window.location.origin;
             });
 
             if (currentCardIndex === 0) {
@@ -330,21 +386,67 @@
         };
 
         // --- Application Logic Functions ---
-        const startSession = () => {
-            flashcardSet = sampleFlashcards[selectedSubject][selectedGrade];
-            currentCardIndex = 0;
-            showFlashcardSessionView();
+        const startSession = async (subject, grade) => {
+            const cards = sampleFlashcards[subject][grade];
+            const newSessionRef = push(ref(db, `users/${userId}/sessions`));
+            
+            const newSession = {
+                subject: subject,
+                grade: grade,
+                flashcards: JSON.stringify(cards),
+                currentCardIndex: 0,
+                createdAt: new Date().toISOString()
+            };
+            
+            try {
+                await set(newSessionRef, newSession);
+                // Redirect to the new session URL
+                window.location.href = `/?sessionid=${newSessionRef.key}`;
+            } catch (error) {
+                console.error("Error creating new session:", error);
+                showCreateSessionView('Failed to create session. Please try again.');
+            }
+        };
+        
+        const deleteSession = async (sessionId) => {
+            const sessionRef = ref(db, `users/${userId}/sessions/${sessionId}`);
+            try {
+                await remove(sessionRef);
+            } catch (error) {
+                console.error("Error deleting session:", error);
+                showHomeView();
+            }
         };
 
-        const nextCard = () => {
+        const loadSession = async (sessionId) => {
+            const sessionRef = ref(db, `users/${userId}/sessions/${sessionId}`);
+            onValue(sessionRef, (snapshot) => {
+                const session = snapshot.val();
+                if (session) {
+                    selectedSessionId = sessionId;
+                    flashcardSet = JSON.parse(session.flashcards);
+                    currentCardIndex = session.currentCardIndex || 0;
+                    showFlashcardSessionView();
+                } else {
+                    console.error("Session not found:", sessionId);
+                    window.location.href = window.location.origin; // Redirect to home
+                }
+            }, { onlyOnce: true });
+        };
+        
+        const nextCard = async () => {
             const flashcard = document.getElementById('flashcard');
             if (flashcard.classList.contains('flipped')) {
                 flashcard.classList.remove('flipped');
             }
+            
             // Add a small delay for the flip animation to finish
-            setTimeout(() => {
+            setTimeout(async () => {
                 if (currentCardIndex < flashcardSet.length - 1) {
                     currentCardIndex++;
+                    // Update card index in the database
+                    const sessionRef = ref(db, `users/${userId}/sessions/${selectedSessionId}/currentCardIndex`);
+                    await set(sessionRef, currentCardIndex);
                     showFlashcardSessionView();
                 } else {
                     showFlashcardSessionView("You've completed this session!");
@@ -353,14 +455,18 @@
             }, 500);
         };
 
-        const prevCard = () => {
+        const prevCard = async () => {
             const flashcard = document.getElementById('flashcard');
             if (flashcard.classList.contains('flipped')) {
                 flashcard.classList.remove('flipped');
             }
-            setTimeout(() => {
+            
+            setTimeout(async () => {
                 if (currentCardIndex > 0) {
                     currentCardIndex--;
+                    // Update card index in the database
+                    const sessionRef = ref(db, `users/${userId}/sessions/${selectedSessionId}/currentCardIndex`);
+                    await set(sessionRef, currentCardIndex);
                     showFlashcardSessionView();
                 }
             }, 500);
@@ -373,21 +479,14 @@
                     userId = user.uid;
                     userIdElement.textContent = `User ID: ${userId}`;
                     
-                    const flashcardsRef = ref(db, `users/${userId}/flashcards`);
-                    // Use onValue to listen for data changes
-                    onValue(flashcardsRef, (snapshot) => {
-                        const data = snapshot.val();
-                        if (!data) {
-                            // If no data exists for the user, push the sample data
-                            set(flashcardsRef, sampleFlashcards)
-                                .then(() => console.log("Sample data successfully written to Realtime Database."))
-                                .catch(error => console.error("Error writing sample data: ", error));
-                        } else {
-                            console.log("Flashcard data loaded from Realtime Database.");
-                        }
-                    }, { onlyOnce: true });
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const sessionId = urlParams.get('sessionid');
                     
-                    showHomeView();
+                    if (sessionId) {
+                        loadSession(sessionId);
+                    } else {
+                        showHomeView();
+                    }
                 } else {
                     // Sign in anonymously if no user is found
                     signInAnonymously(auth).catch(error => {
