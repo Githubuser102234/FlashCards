@@ -46,15 +46,18 @@
 </head>
 <body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen p-4">
 
+    <!-- Main Container -->
     <div id="app-container" class="w-full max-w-xl flex flex-col items-center">
         <div class="text-center mb-6">
             <h1 class="text-4xl font-extrabold text-blue-400">Flashcard Master</h1>
             <p id="user-id-display" class="text-sm text-gray-400 mt-2"></p>
         </div>
 
+        <!-- The main application content will be rendered here -->
         <div id="content-container" class="w-full"></div>
     </div>
 
+    <!-- Firebase SDK and Application Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
@@ -115,41 +118,6 @@
                     { question: 'What is the square root of $64$?', answer: '$8$' },
                     { question: 'What is the decimal equivalent of $3/4$?', answer: '$0.75$' },
                 ],
-                '5th': [
-                    { question: 'What is the value of $1/2 + 1/4$?', answer: '$3/4$' },
-                    { question: 'What is the area of a triangle with a base of 10 and height of 5?', answer: '$25$' },
-                    { question: 'What is the circumference of a circle with a radius of 2?', answer: '$4\\pi$' },
-                    { question: 'What is $3^4$?', answer: '$81$' },
-                ],
-            },
-            writing: {
-                '1st': [
-                    { question: 'Spell the word for a big red fruit.', answer: 'Apple' },
-                    { question: 'Spell the word for a small insect with wings.', answer: 'Bug' },
-                    { question: 'Spell the word for the sound a dog makes.', answer: 'Bark' },
-                    { question: 'Spell the word for a type of pet with a long tail.', answer: 'Cat' },
-                    { question: 'Spell the word for the number after two.', answer: 'Three' },
-                    { question: 'Spell the word for a big flying animal.', answer: 'Bird' },
-                    { question: 'Spell the word for a place you sleep.', answer: 'Bed' },
-                    { question: 'Spell the word for something that lights up at night.', answer: 'Star' },
-                ],
-                '2nd': [
-                    { question: 'Correct the spelling: "hapy"', answer: 'Happy' },
-                    { question: 'Correct the spelling: "frend"', answer: 'Friend' },
-                    { question: 'What is a noun?', answer: 'A person, place, or thing.' },
-                    { question: 'What is a verb?', answer: 'An action word.' },
-                    { question: 'What is an adjective?', answer: 'A word that describes a noun.' },
-                    { question: 'Write a sentence using the word "run".', answer: 'The boy will run fast.' },
-                    { question: 'Correct the spelling: "beautful"', answer: 'Beautiful' },
-                ],
-                '3rd': [
-                    { question: 'Write a sentence using a comma.', answer: 'I like apples, bananas, and oranges.' },
-                    { question: 'What is a compound sentence?', answer: 'A sentence with two or more independent clauses.' },
-                    { question: 'Correct the spelling: "definately"', answer: 'Definitely' },
-                    { question: 'What is a synonym for "big"?', answer: 'Large, gigantic, huge.' },
-                    { question: 'What is an antonym for "hot"?', answer: 'Cold' },
-                    { question: 'Write a short paragraph about your favorite animal.', answer: 'Responses will vary, but should include a topic sentence and supporting details.' },
-                ],
             },
             history: {
                 '4th': [
@@ -158,23 +126,17 @@
                     { question: 'What ancient civilization built the pyramids?', answer: 'Ancient Egypt' },
                     { question: 'What was the name of the ship the Pilgrims sailed on?', answer: 'The Mayflower' },
                 ],
-                '5th': [
-                    { question: 'Who was the main author of the Declaration of Independence?', answer: 'Thomas Jefferson' },
-                    { question: 'What was the Stamp Act?', answer: 'A British tax on colonial documents and paper goods' },
-                    { question: 'What was the Boston Tea Party?', answer: 'A protest against British taxes' },
-                    { question: 'What major event started in 1861 and ended in 1865 in the U.S.?', answer: 'The Civil War' },
-                ],
                 '6th': [
                     { question: 'What was the Silk Road?', answer: 'A trade route connecting East and West' },
                     { question: 'What is a democracy?', answer: 'A government where citizens vote for their leaders' },
                     { question: 'Who was Julius Caesar?', answer: 'A Roman general and dictator' },
                     { question: 'What did the Magna Carta do?', answer: 'Limited the power of the king' },
                 ],
-                '7th': [
-                    { question: 'What was the Renaissance?', answer: 'A period of European cultural and artistic rebirth' },
-                    { question: 'Who was Martin Luther?', answer: 'The German friar who started the Protestant Reformation' },
-                    { question: 'What was the Black Death?', answer: 'A devastating pandemic in the 14th century' },
-                    { question: 'Who were the major figures of the Scientific Revolution?', answer: 'Galileo, Copernicus, Newton' },
+                '9th': [
+                    { question: 'What were the main causes of World War I?', answer: 'Militarism, Alliances, Imperialism, Nationalism' },
+                    { question: 'What was the Industrial Revolution?', answer: 'A period of major changes in technology and industry' },
+                    { question: 'Who wrote the Declaration of Independence?', answer: 'Thomas Jefferson' },
+                    { question: 'What was the Cold War?', answer: 'A state of political and military tension between the U.S. and the Soviet Union' },
                 ],
             },
             science: {
@@ -184,23 +146,17 @@
                     { question: 'What is the largest organ in the human body?', answer: 'Skin' },
                     { question: 'What state of matter is water vapor?', answer: 'Gas' },
                 ],
-                '5th': [
-                    { question: 'What is the name of the process by which water turns into a gas?', answer: 'Evaporation' },
-                    { question: 'What is the main function of the heart?', answer: 'To pump blood throughout the body' },
-                    { question: 'What are the three parts of an atom?', answer: 'Proton, neutron, and electron' },
-                    { question: 'What is the Earth\'s largest source of energy?', answer: 'The Sun' },
-                ],
                 '6th': [
                     { question: 'What is photosynthesis?', answer: 'The process plants use to make food from sunlight' },
                     { question: 'What is the Law of Conservation of Energy?', answer: 'Energy cannot be created or destroyed' },
                     { question: 'What are the three states of matter?', answer: 'Solid, liquid, and gas' },
                     { question: 'What does a barometer measure?', answer: 'Air pressure' },
                 ],
-                '7th': [
-                    { question: 'What is the difference between speed and velocity?', answer: 'Velocity includes direction' },
-                    { question: 'What is the chemical formula for water?', answer: '$H_2O$' },
-                    { question: 'What is a species?', answer: 'A group of organisms that can reproduce with one another' },
-                    { question: 'What is the process by which a cell divides to form two identical cells?', answer: 'Mitosis' },
+                '9th': [
+                    { question: 'What is a covalent bond?', answer: 'A chemical bond formed by the sharing of electrons' },
+                    { question: 'What is the SI unit of force?', answer: 'Newton' },
+                    { question: 'Who developed the theory of relativity?', answer: 'Albert Einstein' },
+                    { question: 'What is a black hole?', answer: 'A region of spacetime where gravity is so strong nothing can escape' },
                 ],
             },
             geography: {
@@ -210,83 +166,17 @@
                     { question: 'What is a country entirely within the city of Rome, Italy?', answer: 'Vatican City' },
                     { question: 'What is the capital of Japan?', answer: 'Tokyo' },
                 ],
-                '5th': [
-                    { question: 'What is the longest river in the world?', answer: 'The Nile' },
-                    { question: 'What is the largest desert in the world?', answer: 'The Sahara Desert' },
-                    { question: 'What is the capital of France?', answer: 'Paris' },
-                    { question: 'Which mountain range is the longest in the world?', answer: 'The Andes' },
-                ],
                 '6th': [
+                    { question: 'What is the longest river in the world?', answer: 'The Nile' },
+                    { question: 'What mountain range runs through the western part of North America?', answer: 'The Rocky Mountains' },
                     { question: 'What is a delta?', answer: 'A landform created by deposition of sediment at the mouth of a river' },
                     { question: 'What is the largest country in the world by area?', answer: 'Russia' },
+                ],
+                '9th': [
                     { question: 'What is the name of the imaginary line that divides the Earth into the Northern and Southern Hemispheres?', answer: 'The Equator' },
-                    { question: 'What is the study of weather and atmosphere called?', answer: 'Meteorology' },
-                ],
-                '7th': [
-                    { question: 'What is the difference between a state and a nation?', answer: 'A state is a political entity, a nation is a cultural entity' },
-                    { question: 'What are the five Great Lakes?', answer: 'Huron, Ontario, Michigan, Erie, Superior' },
-                    { question: 'What is the capital of Canada?', answer: 'Ottawa' },
-                    { question: 'What is a fjord?', answer: 'A long, narrow, deep inlet of the sea between high cliffs' },
-                ],
-            },
-            art: {
-                '4th': [
-                    { question: 'What are the primary colors?', answer: 'Red, blue, and yellow' },
-                    { question: 'What is a sculpture?', answer: 'A three-dimensional work of art' },
-                    { question: 'What is a landscape painting?', answer: 'A painting of natural scenery' },
-                    { question: 'Who painted the Mona Lisa?', answer: 'Leonardo da Vinci' },
-                ],
-                '5th': [
-                    { question: 'What is a portrait?', answer: 'A painting, photograph, sculpture, or other artistic representation of a person' },
-                    { question: 'What is a mosaic?', answer: 'A picture or pattern produced by arranging together small colored pieces of hard material' },
-                    { question: 'What is Impressionism?', answer: 'A style of painting that uses small, thin brushstrokes and an emphasis on light' },
-                    { question: 'Who is known for painting sunflowers and starry nights?', answer: 'Vincent van Gogh' },
-                ],
-                '6th': [
-                    { question: 'What is the difference between hue and value?', answer: 'Hue is the color itself; value is how light or dark it is' },
-                    { question: 'What is a fresco?', answer: 'A painting done rapidly in watercolor on wet plaster on a wall or ceiling' },
-                    { question: 'What is Cubism?', answer: 'An early 20th-century art movement that revolutionized European painting and sculpture' },
-                    { question: 'What famous artist is known for his melting clocks?', answer: 'Salvador Dalí' },
-                ],
-            },
-            literature: {
-                '4th': [
-                    { question: 'What is a main character in a story?', answer: 'The most important character, who the story is about' },
-                    { question: 'What is a setting?', answer: 'The time and place of a story' },
-                    { question: 'What is a fairy tale?', answer: 'A story that often features magical creatures and a moral lesson' },
-                    { question: 'Who wrote "Where the Wild Things Are"?', answer: 'Maurice Sendak' },
-                ],
-                '5th': [
-                    { question: 'What is the difference between fiction and nonfiction?', answer: 'Fiction is a made-up story; nonfiction is based on facts' },
-                    { question: 'What is an autobiography?', answer: 'A story of a person\'s life written by that person' },
-                    { question: 'What is a simile?', answer: 'A comparison using "like" or "as"' },
-                    { question: 'What is a metaphor?', answer: 'A direct comparison, saying one thing is another' },
-                ],
-                '6th': [
-                    { question: 'What is a theme in a story?', answer: 'The main idea or underlying message the author wants to convey' },
-                    { question: 'What is the plot of a story?', answer: 'The sequence of events in a narrative' },
-                    { question: 'Who wrote "Harry Potter"?', answer: 'J.K. Rowling' },
-                    { question: 'What is a sonnet?', answer: 'A 14-line poem with a specific rhyme scheme' },
-                ],
-            },
-            spanish: {
-                '4th': [
-                    { question: 'How do you say "hello" in Spanish?', answer: 'Hola' },
-                    { question: 'What does "gracias" mean?', answer: 'Thank you' },
-                    { question: 'How do you say "one" in Spanish?', answer: 'Uno' },
-                    { question: 'How do you say "red" in Spanish?', answer: 'Rojo' },
-                ],
-                '5th': [
-                    { question: 'How do you say "dog" in Spanish?', answer: 'Perro' },
-                    { question: 'How do you say "cat" in Spanish?', answer: 'Gato' },
-                    { question: 'What does "¿Cómo estás?" mean?', answer: 'How are you?' },
-                    { question: 'What is the Spanish word for "mother"?', answer: 'Madre' },
-                ],
-                '6th': [
-                    { question: 'What are the Spanish words for the days of the week?', answer: 'Lunes, martes, miércoles, jueves, viernes, sábado, domingo' },
-                    { question: 'What is the plural form of "el libro"?', answer: 'Los libros' },
-                    { question: 'What does "tener" mean?', answer: 'To have' },
-                    { question: 'What is the Spanish word for "school"?', answer: 'Escuela' },
+                    { question: 'What is a geopolitical conflict?', answer: 'A conflict influenced by both geography and politics' },
+                    { question: 'What is urbanization?', answer: 'The process of a population shifting from rural to urban areas' },
+                    { question: 'What is the highest point on Earth?', answer: 'Mount Everest' },
                 ],
             }
         };
@@ -294,13 +184,6 @@
         const contentContainer = document.getElementById('content-container');
         const userIdElement = document.getElementById('user-id-display');
         let userId = '';
-        let sessions = {};
-        let selectedSessionId = null;
-        let flashcardSet = [];
-        let currentCardIndex = 0;
-        
-        // Helper to get the base URL without query parameters
-        const getBaseUrl = () => `${window.location.protocol}//${window.location.host}${window.location.pathname}`;
 
         // --- Functions to manage UI views ---
         const showHomeView = () => {
@@ -369,7 +252,7 @@
                     const sessionId = event.target.dataset.sessionId;
                     if (event.target.dataset.action === 'start') {
                         // Navigate to the session URL to handle the start logic
-                        window.location.href = `${getBaseUrl()}?sessionid=${sessionId}`;
+                        window.location.href = `/?sessionid=${sessionId}`;
                     } else if (event.target.dataset.action === 'delete') {
                         deleteSession(sessionId);
                     }
@@ -444,15 +327,10 @@
         const showFlashcardSessionView = (message = null) => {
             currentView = 'flashcardSession';
             const currentCard = flashcardSet[currentCardIndex];
-            const session = sessions[selectedSessionId];
-            if (!session) {
-                 window.location.href = getBaseUrl();
-                 return;
-            }
             contentContainer.innerHTML = `
                 <div class="flex flex-col items-center p-6 bg-gray-800 rounded-xl shadow-lg w-full max-w-xl min-h-[30rem]">
                     <h2 class="text-2xl font-bold text-white mb-4 text-center">
-                        ${session.subject.charAt(0).toUpperCase() + session.subject.slice(1)} - ${session.grade.charAt(0).toUpperCase() + session.grade.slice(1)} Grade
+                        ${sessions[selectedSessionId].subject.charAt(0).toUpperCase() + sessions[selectedSessionId].subject.slice(1)} - ${sessions[selectedSessionId].grade.charAt(0).toUpperCase() + sessions[selectedSessionId].grade.slice(1)} Grade
                     </h2>
                     <div class="text-lg text-gray-400 mb-6">
                         Card ${currentCardIndex + 1} of ${flashcardSet.length}
@@ -499,7 +377,7 @@
             prevBtn.addEventListener('click', prevCard);
             nextBtn.addEventListener('click', nextCard);
             endBtn.addEventListener('click', () => {
-                window.location.href = getBaseUrl();
+                window.location.href = window.location.origin;
             });
 
             if (currentCardIndex === 0) {
@@ -523,7 +401,7 @@
             try {
                 await set(newSessionRef, newSession);
                 // Redirect to the new session URL
-                window.location.href = `${getBaseUrl()}?sessionid=${newSessionRef.key}`;
+                window.location.href = `/?sessionid=${newSessionRef.key}`;
             } catch (error) {
                 console.error("Error creating new session:", error);
                 showCreateSessionView('Failed to create session. Please try again.');
@@ -551,7 +429,7 @@
                     showFlashcardSessionView();
                 } else {
                     console.error("Session not found:", sessionId);
-                    window.location.href = getBaseUrl(); // Redirect to home
+                    window.location.href = window.location.origin; // Redirect to home
                 }
             }, { onlyOnce: true });
         };
